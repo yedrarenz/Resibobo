@@ -2,7 +2,6 @@ paddleocr
 opencv-python
 pillow
 pandas
-fastapi 
 uvicorn
 pytesseract
 numpy

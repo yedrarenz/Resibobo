@@ -6,12 +6,11 @@ os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 30).__str__()
 os.environ['DISABLE_AUTO_LOGGING_CONFIG'] = '1'
 
 import cv2
-import numpy as np
 import re
 from dateutil import parser
 
 from paddleocr import PaddleOCR, logger
-import logging, sys
+import logging
 logger.setLevel(level=logging.INFO)
 
 # For future feature
@@ -42,6 +41,9 @@ def crop_receipt(image_path):
 
 # For future feature
 def sharpen_image(image):
+    import numpy as np
+
+
     # 1. Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -76,11 +78,6 @@ def text_extractor(image_path):
     :param image_path:
     :return:
     """
-    ocr = PaddleOCR(
-        use_doc_orientation_classify=False,
-        use_doc_unwarping=False,
-        use_textline_orientation=False
-    )
 
     # Run OCR inference on a sample image
     result = ocr.predict(
@@ -96,6 +93,7 @@ def text_extractor(image_path):
 
 def tin_formatter(full_text, data):
     # TIN patterns
+    # To Do Branch code at last digits should be 5 = 00000
     tin_patterns = [r'\d{3}-\d{3}-\d{3}-\d{3}',
                     r'\bTIN[:.]?\s*([\d\-]+)',
                     r'VAT REG TIN.[:.]?\s*([\d\-]+)',
@@ -108,45 +106,76 @@ def tin_formatter(full_text, data):
 
 def total_formatter(full_text, data):
     # Total patterns
-    total_patterns = [r'Total\s*Due[:.]?\s*P?\s*([\d,]+\.?\d*)',
-                      r'Total\s*(?:Due|Amount)?[:.]?\s*P\s*([\d,]+\.?\d*)',
-                      r'([\d,]+\.?\d*)\s*TOTAL\s*(?:AMOUNT\s*)?DUE',
-                      r'AMOUNT\s*DUE\s*[:.]P?\s*P([\d,]+\.?\d*)',
-                      r'Total[:.]?\s*P?([\d,.]+)']
+    total_patterns = [
+        r'\bTotal\s*[\(\（].*?VAT.*?[\)\）]\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
+        r'\bTotal\s+Due\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
+        r'\bTotal\s+Invoice\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
+        r'\bAmount\s*\bDue\s*[:.](?:₱|Php|P)?\s*(?:₱|Php|P)?([\d,]+\.?\d*)',
+        r'\bTotal\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)'
+    ]
 
     for pat in total_patterns:
-        m = re.search(pat, full_text, flags=re.IGNORECASE | re.DOTALL)
+        m = re.search(pat, full_text, re.IGNORECASE)
         if m:
-            total = re.findall(r'\d+(?:\.\d+)?', m.group(0))
-            if list(total):
-                data['Total'] = " ".join(total).replace(' ', '')
-            else:
-                data['Total'] = total[0]
+            data['Total'] = m.group(1)
             break
 
 def company_formatter(data, lines):
-    # Company & Address: take first 2-3 lines before any TIN/VAT/MIN keywords
     company_lines = []
-    for line in lines:
-        if re.search(r'TIN|VAT|MIN|ACCRED|\d{3}-\d{3}-\d{3}-\d{3}', line, flags=re.IGNORECASE):
+
+    for i, line in enumerate(lines):
+        line = line.strip()
+        # Look for TIN / VAT / MIN keywords
+        if re.search(r'TIN|VAT|MIN|ACCRED', line, flags=re.IGNORECASE):
+            # Try capturing **after TIN** as address if company not already captured
+            address_lines = []
+            for j in range(i + 1, min(i + 5, len(lines))):
+                next_line = lines[j].strip()
+                if not next_line or re.search(r'SN|MIN|Invoice|Date|Time|Cash|Total', next_line, re.I):
+                    break
+
+                # Remove common unwanted prefixes
+                next_line = re.sub(r'Address:|ADDRESS:|To#|Hin:|Min:|Shid|Pcs/N|SN|Accred|VAT REG TIN',
+                                   '', next_line, flags=re.I)
+
+                # Remove pattern like ":Pc03Zwjh-B-1" (colon + alphanumeric + optional dashes)
+                next_line = re.sub(r':\s*[A-Za-z0-9\-]+', '', next_line)
+
+                # Remove long digit sequences (8+ digits)
+                next_line = re.sub(r'\b\d{8,}\b', '', next_line)
+
+                # Remove extra punctuation from OCR artifacts
+                next_line = re.sub(r'[_*|<>]', ' ', next_line)
+
+                # Collapse multiple spaces
+                next_line = re.sub(r'\s+', ' ', next_line).strip()
+
+                if next_line:
+                    address_lines.append(next_line.title())
+
+            if address_lines:
+                company_lines.extend(address_lines)
             break
-        company_lines.append(line.strip().title())
+        else:
+            company_lines.append(line.title())
+
     if company_lines:
         data['Company & Address'] = " ".join(company_lines)
 
 def date_formatter(full_text, data):
     # Date patterns
     date_patterns = [
-        r'\b\d{4}-\d{2}-\d{2}(?!\d)',
-        r'\b\d{2}/\d{2}/\d{2,4}(?!\d)',
-        r'\b[A-Za-z]{3,9}\s+\d{1,2},\s*\d{4}\b'
+        r'\b\d{4}[./-]\d{2}[./-]\d{2}',  # 2026-01-11 or 2026.01.11
+        r'\b\d{2}/\d{2}/\d{2,4}',  # 01/11/2026
+        r'\b[A-Za-z]{3,9}\s+\d{1,2},\s*\d{4}',  # January 11, 2026
     ]
 
     candidates = []
 
     for pat in date_patterns:
         matches = re.findall(pat, full_text)
-        candidates.extend(matches)
+        if matches:
+            candidates.append(matches[0])
 
         # Remove dates that are likely accreditation dates
         filtered = []
@@ -180,9 +209,10 @@ def extract_biz_info(image_path):
     logger.info("Extracting Date Issued...")
     date_formatter(full_text, data)
 
-    logger.info("Extracting Company & Address...")
+    logger.info("Extracting Company & Address...\n\n")
     company_formatter(data, lines)
 
+    logger.info(f'Extracted data: {data}\n\n')
 
     return data
 
@@ -195,6 +225,11 @@ def normalize_date(date_str):
                           ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
                           else '', date_str)
 
+        # If Date has format '/' and 202600 -- Last 2 Digits came from time.
+        if '/' in date_str:
+            if len(date_str.split('/')[2]) == 6:
+                date_str = date_str[:-2]
+
         # Parse automatically
         parsed = parser.parse(date_str)
         return parsed.strftime("%Y-%m-%d")
@@ -205,6 +240,12 @@ def normalize_date(date_str):
 if __name__ == "__main__":
     from pathlib import Path
     from utils.convert_to_excel import convert_to_excel
+
+    ocr = PaddleOCR(
+        use_doc_orientation_classify=False,
+        use_doc_unwarping=False,
+        use_textline_orientation=False
+    )
 
     dir_path = Path("receipts")
 
