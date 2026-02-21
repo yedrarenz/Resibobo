@@ -5,8 +5,6 @@
 
 import os
 
-from pandas.conftest import cls
-
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 30).__str__()
 os.environ['DISABLE_AUTO_LOGGING_CONFIG'] = '1'
