@@ -111,20 +111,24 @@ def total_formatter(full_text, data):
     total_patterns = [r'Total\s*Due[:.]?\s*P?\s*([\d,]+\.?\d*)',
                       r'Total\s*(?:Due|Amount)?[:.]?\s*P\s*([\d,]+\.?\d*)',
                       r'([\d,]+\.?\d*)\s*TOTAL\s*(?:AMOUNT\s*)?DUE',
+                      r'AMOUNT\s*DUE\s*[:.]P?\s*P([\d,]+\.?\d*)',
                       r'Total[:.]?\s*P?([\d,.]+)']
 
     for pat in total_patterns:
         m = re.search(pat, full_text, flags=re.IGNORECASE | re.DOTALL)
         if m:
             total = re.findall(r'\d+(?:\.\d+)?', m.group(0))
-            data['Total'] = total[0]
+            if list(total):
+                data['Total'] = " ".join(total).replace(' ', '')
+            else:
+                data['Total'] = total[0]
             break
 
 def company_formatter(data, lines):
     # Company & Address: take first 2-3 lines before any TIN/VAT/MIN keywords
     company_lines = []
     for line in lines:
-        if re.search(r'TIN|VAT|MIN|ACCRED', line, flags=re.IGNORECASE):
+        if re.search(r'TIN|VAT|MIN|ACCRED|\d{3}-\d{3}-\d{3}-\d{3}', line, flags=re.IGNORECASE):
             break
         company_lines.append(line.strip().title())
     if company_lines:
@@ -164,13 +168,18 @@ def extract_biz_info(image_path):
     full_text = " ".join(lines)
     data = {}
 
+    logger.info(f'Parsing extracted receipt: {full_text}')
+
     logger.info(f"Extracting from {image_path}...")
     logger.info("Extracting TIN...")
     tin_formatter(full_text, data)
+
     logger.info("Extracting Total...")
     total_formatter(full_text, data)
+
     logger.info("Extracting Date Issued...")
     date_formatter(full_text, data)
+
     logger.info("Extracting Company & Address...")
     company_formatter(data, lines)
 
