@@ -13,6 +13,7 @@ os.environ['PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK'] = 'True'
 import cv2
 import re
 from dateutil import parser
+import numpy as np
 
 from PIL import Image
 
@@ -86,6 +87,11 @@ def text_extractor(image_path):
     :param image_path:
     :return:
     """
+    if 'heic' in str(image_path).lower():
+        img = Image.open(image_path)
+
+        # Convert to OpenCV format
+        image_path = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
     img = cv2.imread(str(image_path))
 
