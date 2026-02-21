@@ -2,12 +2,19 @@
 # https://github.com/PaddlePaddle/PaddleOCR?tab=readme-ov-file
 
 import os
+
+from pandas.conftest import cls
+
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 30).__str__()
 os.environ['DISABLE_AUTO_LOGGING_CONFIG'] = '1'
+os.environ['PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK'] = 'True'
 
 import cv2
 import re
 from dateutil import parser
+
+from PIL import Image
 
 from paddleocr import PaddleOCR, logger
 import logging
@@ -88,7 +95,6 @@ def text_extractor(image_path):
     #     #res.print()
     #     res.save_to_img("misc")
     #     res.save_to_json("misc")
-
     return result
 
 def tin_formatter(full_text, data):
@@ -243,9 +249,14 @@ if __name__ == "__main__":
     from utils.convert_to_excel import convert_to_excel
 
     ocr = PaddleOCR(
+        text_detection_model_dir="models/PP-OCRv5_server_det",
+        text_detection_model_name="PP-OCRv5_server_det",
+        text_recognition_model_name="PP-OCRv5_server_rec",
+        text_recognition_model_dir="models/PP-OCRv5_server_rec",
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
-        use_textline_orientation=False
+        use_textline_orientation=False,
+        lang='en'
     )
 
     dir_path = Path("receipts")
