@@ -17,6 +17,9 @@ import numpy as np
 
 from PIL import Image
 
+from pillow_heif import register_heif_opener
+register_heif_opener()
+
 from paddleocr import PaddleOCR, logger
 import logging
 logger.setLevel(level=logging.ERROR)
@@ -91,9 +94,9 @@ def text_extractor(image_path):
         img = Image.open(image_path)
 
         # Convert to OpenCV format
-        image_path = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-
-    img = cv2.imread(str(image_path))
+        img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+    else:
+        img = cv2.imread(str(image_path))
 
     h, w = img.shape[:2]
 
