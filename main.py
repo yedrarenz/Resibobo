@@ -18,7 +18,8 @@ from PIL import Image
 
 from paddleocr import PaddleOCR, logger
 import logging
-logger.setLevel(level=logging.INFO)
+logger.setLevel(level=logging.ERROR)
+
 
 # For future feature
 def crop_receipt(image_path):
@@ -86,15 +87,16 @@ def text_extractor(image_path):
     :return:
     """
 
-    # Run OCR inference on a sample image
-    result = ocr.predict(
-        input=image_path)
+    img = cv2.imread(str(image_path))
 
-    # Visualize the results and save the JSON results
-    # for res in result:
-    #     #res.print()
-    #     res.save_to_img("misc")
-    #     res.save_to_json("misc")
+    h, w = img.shape[:2]
+
+    max_width = 1200
+    if w > max_width:
+        ratio = max_width / w
+        img = cv2.resize(img, (max_width, int(h * ratio)))
+
+    result = ocr.predict(input=img)
     return result
 
 def tin_formatter(full_text, data):
@@ -256,7 +258,7 @@ if __name__ == "__main__":
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
         use_textline_orientation=False,
-        lang='en'
+        text_det_limit_side_len=960
     )
 
     dir_path = Path("receipts")
