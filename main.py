@@ -1,5 +1,7 @@
 # https://opencv.org/cropping-an-image-using-opencv/
 # https://github.com/PaddlePaddle/PaddleOCR?tab=readme-ov-file
+# https://huggingface.co/PaddlePaddle/PP-OCRv5_server_rec
+# https://huggingface.co/PaddlePaddle/PP-OCRv5_server_det
 
 import os
 
