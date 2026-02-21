@@ -108,7 +108,7 @@ def total_formatter(full_text, data):
     # Total patterns
     total_patterns = [
         r'\bTotal\s*[\(\（].*?VAT.*?[\)\）]\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
-        r'\bTotal\s+Due\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
+        r'\bTotal\s*Due\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
         r'\bTotal\s+Invoice\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
         r'\bAmount\s*\bDue\s*[:.](?:₱|Php|P)?\s*(?:₱|Php|P)?([\d,]+\.?\d*)',
         r'\bTotal\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)'
@@ -168,6 +168,7 @@ def date_formatter(full_text, data):
         r'\b\d{4}[./-]\d{2}[./-]\d{2}',  # 2026-01-11 or 2026.01.11
         r'\b\d{2}/\d{2}/\d{2,4}',  # 01/11/2026
         r'\b[A-Za-z]{3,9}\s+\d{1,2},\s*\d{4}',  # January 11, 2026
+        r'\b\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\b' # 10 Feb 2026
     ]
 
     candidates = []
