@@ -38,6 +38,9 @@
 - Image inferencing uses CPU for Windows 
 - M1 / Mac Machines runs slow as it uses memory
 - GPU is a must-have to run the script fast.
+- Process actual receipts for now.
+  - Receipts like: 
+    - Grab, Food Panda, and Rectable receipts are not yet supported.
 
 # For Improvements
 - Data sanitization

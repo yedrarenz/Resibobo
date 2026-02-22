@@ -224,28 +224,31 @@ def date_formatter(full_text, data):
 
 def extract_biz_info(image_path):
     result = text_extractor(str(image_path))
-    lines = result[0]['rec_texts']
-    full_text = " ".join(lines)
-    data = {}
 
-    logger.info(f'Parsing extracted receipt: {full_text}')
+    if result:
+        lines = result[0]['rec_texts']
+        full_text = " ".join(lines)
+        data = {}
 
-    logger.info(f"Extracting from {image_path}...")
-    logger.info("Extracting TIN...")
-    tin_formatter(full_text, data)
+        logger.info(f'Parsing extracted receipt: {full_text}')
 
-    logger.info("Extracting Total...")
-    total_formatter(full_text, data)
+        logger.info(f"Extracting from {image_path}...")
+        logger.info("Extracting TIN...")
+        tin_formatter(full_text, data)
 
-    logger.info("Extracting Date Issued...")
-    date_formatter(full_text, data)
+        logger.info("Extracting Total...")
+        total_formatter(full_text, data)
 
-    logger.info("Extracting Company & Address...\n\n")
-    company_formatter(data, lines)
+        logger.info("Extracting Date Issued...")
+        date_formatter(full_text, data)
 
-    logger.info(f'Extracted data: {data}\n\n')
+        logger.info("Extracting Company & Address...\n\n")
+        company_formatter(data, lines)
 
-    return data
+        logger.info(f'Extracted data: {data}\n\n')
+
+        return data
+    return None
 
 def normalize_date(date_str):
     parsed_date = []
