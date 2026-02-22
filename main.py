@@ -124,15 +124,15 @@ def tin_formatter(full_text, data):
             break
 
 def total_formatter(full_text, data):
-    # Total patterns
+    print(full_text)
 
+    # Total patterns
     total_patterns = [
         r'\bTotal\s*[\(\（].*?VAT.*?[\)\）]\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
-        r'\bTotal\s*Due\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
+        r'\bTotal\s*Due\b[:.]?\s*(?:₱|PHP|P)?\s*([\d,]+(?:\.\d{1,2})?)',
         r'\bTotal\s+Invoice\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
-        r'\bAmount\s*\bDue\s*[:.](?:₱|Php|P)?\s*(?:₱|Php|P)?\s*(?:ρ)?([\d,]+\.?\d*)',
-        #r'\bAmount\s*\bDue\s*[:.](?:₱|Php|P)?\s*(?:₱|Php|P)?([\d,]+\.?\d*)',
-        r'\bTotal\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)'
+        r'\bAmount\s*\bDue\s*[:.]?(?:₱|Php|P)?\s*(?:₱|Php|P)?\s*(?:ρ)?\s*(?:p)?([\d,]+\.?\d*)',
+        r'\bTotal\b[:.]?\s*(?:\bAmount\b)?\s*(?:₱|Php|P|ρ)?\s*(?:₱|Php|P|ρ)?\s*([\d.,]+)'
     ]
 
     for pat in total_patterns:
@@ -194,11 +194,11 @@ def company_formatter(data, lines):
 def date_formatter(full_text, data):
     # Date patterns
     date_patterns = [
-        r'\b\d{4}[./-]\d{2}[./-]\d{2}',  # 2026-01-11 or 2026.01.11
-        r'\b\d{2}/\d{2}/\d{2,4}',  # 01/11/2026
-        r'\b[A-Za-z]{3,9}\s+\d{1,2},\s*\d{4}',  # January 11, 2026
-        r'\b\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\b',  # 10 Feb 2026,
-        r'\b[A-Za-z]{3}\s?\d{1,2}\s?[A-Za-z]{3}\s?\d{4}' # Tue10Feb2026
+        r'\b\d{4}[./-]\d{2}[./-]\d{2}',                     # 2026-01-11 or 2026.01.11
+        r'\b\d{2}/\d{2}/(?:\d{2}|\d{4})\b',                 # 01/11/2026 or 01/11/26
+        r'\b[A-Za-z]{3,9}\s+\d{1,2},\s*\d{4}',              # January 11, 2026
+        r'\b\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\b',               # 10 Feb 2026
+        r'\b[A-Za-z]{3}\s?\d{1,2}\s?[A-Za-z]{3}\s?\d{4}'    # Tue10Feb2026
     ]
 
     candidates = []
@@ -255,20 +255,14 @@ def normalize_date(date_str):
 
     try:
         for date in date_str:
-            # Remove words like "INVOICE"
-            date_str = re.sub(r'[A-Za-z]+', lambda x: x.group() if x.group().lower() in
-                                                                   ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul',
-                                                                    'aug', 'sep', 'oct', 'nov', 'dec']
-            else '', date)
-
             # If Date has format '/' and 202600 -- Last 2 Digits came from time.
-            if '/' in date_str:
-                if len(date_str.split('/')[2]) == 6:
-                    date_str = date_str[:-2]
+            if '/' in date:
+                if len(date.split('/')[2]) == 6:
+                    date = date[:-2]
+                    parsed_date.append(parser.parse(date))
 
-            parsed_date.append(parser.parse(date_str))
+            parsed_date.append(parser.parse(date))
 
-        # Parse automatically
         parsed = max(parsed_date)
         return parsed.strftime("%Y-%m-%d")
 
@@ -296,7 +290,7 @@ if __name__ == "__main__":
         lang='en'
     )
 
-    dir_path = Path("receipts")
+    dir_path = Path("receipts_v2")
 
     final_report = ""
 
@@ -306,7 +300,7 @@ if __name__ == "__main__":
             info['Link'] = f"https://todo-sharepoint.com/{file_path.name}"
             final_report += f"{info}\n"
 
-    with open("final_report/report.txt", "w") as file:
+    with open("final_report/report.txt", "w", encoding="utf-8", errors="ignore") as file:
         file.write(final_report)
 
     convert_to_csv("final_report/report.txt", "output/final_report.csv")

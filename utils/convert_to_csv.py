@@ -18,9 +18,15 @@ def convert_to_csv(input_file, output_file):
                 rows.append(data)
 
     # Write to CSV
-    with open(output_file, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=rows[0].keys())
+    fieldnames = ['TIN', 'Total', 'Date Issued', 'Company & Address', 'Link']
+
+    with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
-        writer.writerows(rows)
+
+        for row in rows:
+            # Filter only keys present in fieldnames
+            filtered_row = {k: v for k, v in row.items() if k in fieldnames}
+            writer.writerow(filtered_row)
 
     logger.info(f"Converted to csv successfully! {output_file}")
