@@ -42,5 +42,10 @@
   - Receipts like: 
     - Grab, Food Panda, and Manual receipts are not yet supported.
 
+# Example Text Detection and Recognition
+![Example Text Detection and Recognition](misc/7e428edc-0258-4efa-866f-5d0d14bd65a7_ocr_res_img.jpg)
+
 # For Improvements
 - Data sanitization
+- Exporting to excel
+- Autocorrection of spelling
