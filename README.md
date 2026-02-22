@@ -33,5 +33,11 @@
 | 128-742-767-001   | 239.00  | 2026-02-13 | Tapa King Gperated By:Keiser Food Service. | https://todo-sharepoint.com/fc005eaa-bb51-40c0-ad9a-24e76506e1d6.jpg |
 
 
+# Limitations
+- Only works well with clear receipts.
+- Image inferencing uses CPU for Windows 
+- M1 / Mac Machines runs slow as it uses memory
+- GPU is a must-have to run the script fast.
+
 # For Improvements
 - Data sanitization

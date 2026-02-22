@@ -90,6 +90,8 @@ def text_extractor(image_path):
     :param image_path:
     :return:
     """
+
+    #Add Support for HEIC Images
     if 'heic' in str(image_path).lower():
         img = Image.open(image_path)
 
@@ -123,11 +125,13 @@ def tin_formatter(full_text, data):
 
 def total_formatter(full_text, data):
     # Total patterns
+
     total_patterns = [
         r'\bTotal\s*[\(\（].*?VAT.*?[\)\）]\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
         r'\bTotal\s*Due\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
         r'\bTotal\s+Invoice\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
-        r'\bAmount\s*\bDue\s*[:.](?:₱|Php|P)?\s*(?:₱|Php|P)?([\d,]+\.?\d*)',
+        r'\bAmount\s*\bDue\s*[:.](?:₱|Php|P)?\s*(?:₱|Php|P)?\s*(?:ρ)?([\d,]+\.?\d*)',
+        #r'\bAmount\s*\bDue\s*[:.](?:₱|Php|P)?\s*(?:₱|Php|P)?([\d,]+\.?\d*)',
         r'\bTotal\b[:.]?\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)'
     ]
 
@@ -152,7 +156,7 @@ def company_formatter(data, lines):
                     break
 
                 # Remove common unwanted prefixes
-                next_line = re.sub(r'Address:|ADDRESS:|To#|Hin:|Min:|Shid|Pcs/N|SN|Accred|VAT REG TIN',
+                next_line = re.sub(r'Address:|ADDRESS:|To#|Hin:|Min:|Shid|Pcs/N|SN|Accred|VAT REG TIN|S/N',
                                    '', next_line, flags=re.I)
 
                 # Remove pattern like ":Pc03Zwjh-B-1" (colon + alphanumeric + optional dashes)
@@ -164,6 +168,9 @@ def company_formatter(data, lines):
                 # Remove extra punctuation from OCR artifacts
                 next_line = re.sub(r'[_*|<>]', ' ', next_line)
 
+                # Remove some weird characters
+                next_line = re.sub(r'\b[A-Za-z]{1,5}\d{6,}\b','', next_line)
+
                 # Collapse multiple spaces
                 next_line = re.sub(r'\s+', ' ', next_line).strip()
 
@@ -174,7 +181,12 @@ def company_formatter(data, lines):
                 company_lines.extend(address_lines)
             break
         else:
-            company_lines.append(line.title())
+            # Final clean up remove possible TIN pattern
+            line = re.sub(
+                    r'(?:[A-Za-z0-9.]+:\s*)?\d{3}-\d{3}-\d{3}-\d{3}|[^A-Za-z0-9\s.,\-\/&#()]',
+                    ' ',
+                    line)
+            company_lines.append(line.strip().title())
 
     if company_lines:
         data['Company & Address'] = " ".join(company_lines)
@@ -185,7 +197,8 @@ def date_formatter(full_text, data):
         r'\b\d{4}[./-]\d{2}[./-]\d{2}',  # 2026-01-11 or 2026.01.11
         r'\b\d{2}/\d{2}/\d{2,4}',  # 01/11/2026
         r'\b[A-Za-z]{3,9}\s+\d{1,2},\s*\d{4}',  # January 11, 2026
-        r'\b\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\b' # 10 Feb 2026
+        r'\b\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\b',  # 10 Feb 2026,
+        r'\b[A-Za-z]{3}\s?\d{1,2}\s?[A-Za-z]{3}\s?\d{4}' # Tue10Feb2026
     ]
 
     candidates = []
@@ -193,7 +206,7 @@ def date_formatter(full_text, data):
     for pat in date_patterns:
         matches = re.findall(pat, full_text)
         if matches:
-            candidates.append(matches[0])
+            candidates.extend(matches)
 
         # Remove dates that are likely accreditation dates
         filtered = []
@@ -206,8 +219,8 @@ def date_formatter(full_text, data):
                 if re.search(r'Issued|Accred|Accreditation', snippet, flags=re.IGNORECASE):
                     continue
             filtered.append(date)
-            data['Date Issued'] = normalize_date(filtered[0])
-            break
+
+            data['Date Issued'] = normalize_date(filtered)
 
 def extract_biz_info(image_path):
     result = text_extractor(str(image_path))
@@ -235,21 +248,25 @@ def extract_biz_info(image_path):
     return data
 
 def normalize_date(date_str):
+    parsed_date = []
+
     try:
-        date_str = date_str.strip()
+        for date in date_str:
+            # Remove words like "INVOICE"
+            date_str = re.sub(r'[A-Za-z]+', lambda x: x.group() if x.group().lower() in
+                                                                   ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul',
+                                                                    'aug', 'sep', 'oct', 'nov', 'dec']
+            else '', date)
 
-        # Remove words like "INVOICE"
-        date_str = re.sub(r'[A-Za-z]+', lambda x: x.group() if x.group().lower() in
-                          ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
-                          else '', date_str)
+            # If Date has format '/' and 202600 -- Last 2 Digits came from time.
+            if '/' in date_str:
+                if len(date_str.split('/')[2]) == 6:
+                    date_str = date_str[:-2]
 
-        # If Date has format '/' and 202600 -- Last 2 Digits came from time.
-        if '/' in date_str:
-            if len(date_str.split('/')[2]) == 6:
-                date_str = date_str[:-2]
+            parsed_date.append(parser.parse(date_str))
 
         # Parse automatically
-        parsed = parser.parse(date_str)
+        parsed = max(parsed_date)
         return parsed.strftime("%Y-%m-%d")
 
     except Exception:
@@ -257,17 +274,23 @@ def normalize_date(date_str):
 
 if __name__ == "__main__":
     from pathlib import Path
-    from utils.convert_to_excel import convert_to_excel
+    from utils.convert_to_csv import convert_to_csv
+
+    text_det_model_dir = "models/mobile_models/PP-OCRv5_mobile_det/"
+    text_rec_model_dir = "models/mobile_models/PP-OCRv5_mobile_rec/"
+    det_model_name = "PP-OCRv5_mobile_det"
+    rec_model_name = "PP-OCRv5_mobile_rec"
 
     ocr = PaddleOCR(
-        text_detection_model_dir="models/PP-OCRv5_server_det",
-        text_detection_model_name="PP-OCRv5_server_det",
-        text_recognition_model_name="PP-OCRv5_server_rec",
-        text_recognition_model_dir="models/PP-OCRv5_server_rec",
+        text_detection_model_dir=text_det_model_dir,
+        text_detection_model_name=det_model_name,
+        text_recognition_model_dir=text_rec_model_dir,
+        text_recognition_model_name=rec_model_name,
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
         use_textline_orientation=False,
-        text_det_limit_side_len=960
+        text_det_limit_side_len=960,
+        lang='en'
     )
 
     dir_path = Path("receipts")
@@ -283,4 +306,4 @@ if __name__ == "__main__":
     with open("final_report/report.txt", "w") as file:
         file.write(final_report)
 
-    convert_to_excel("final_report/report.txt", "output/final_report.csv")
+    convert_to_csv("final_report/report.txt", "output/final_report.csv")
