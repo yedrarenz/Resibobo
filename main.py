@@ -124,8 +124,6 @@ def tin_formatter(full_text, data):
             break
 
 def total_formatter(full_text, data):
-    print(full_text)
-
     # Total patterns
     total_patterns = [
         r'\bTotal\s*[\(\（].*?VAT.*?[\)\）]\s*(?:₱|Php|P)?\s*([\d,]+(?:\.\d{1,2})?)',
