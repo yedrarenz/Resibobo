@@ -8,6 +8,7 @@ import os
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 30).__str__()
 os.environ['DISABLE_AUTO_LOGGING_CONFIG'] = '1'
+os.environ['DISABLE_MODEL_SOURCE_CHECK'] = 'True'
 os.environ['PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK'] = 'True'
 
 import cv2
@@ -53,9 +54,6 @@ def crop_receipt(image_path):
 
 # For future feature
 def sharpen_image(image):
-    import numpy as np
-
-
     # 1. Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -181,7 +179,7 @@ def company_formatter(data, lines):
         else:
             # Final clean up remove possible TIN pattern
             line = re.sub(
-                    r'(?:[A-Za-z0-9.]+:\s*)?\d{3}-\d{3}-\d{3}-\d{3}|[^A-Za-z0-9\s.,\-\/&#()]',
+                    r'(?:[A-Za-z0-9.]+:\s*)?\d{3}-\d{3}-\d{3}-\d{3}|[^A-Za-z0-9\s.,\-/&#()]',
                     ' ',
                     line)
             company_lines.append(line.strip().title())
@@ -195,7 +193,7 @@ def date_formatter(full_text, data):
         r'\b\d{4}[./-]\d{2}[./-]\d{2}',                     # 2026-01-11 or 2026.01.11
       # r'\b\d{2}/\d{2}/(?:\d{2}|\d{4})\b',                 # 01/11/2026 or 01/11/26
         r'\b\d{2}/\d{2}/(?:\d{2}|\d{4})\d*(?:)',            # 01/11/2026 or 01/11/26
-        r'\b[A-Za-z]{3,9}\s+\d{1,2},\s*\d{4}',              # January 11, 2026
+        r'\b[A-Za-z]{3,9}\s+\d{1,2}[,，]\s*\d{4}',              # January 11, 2026
         r'\b\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\b',               # 10 Feb 2026
         r'\b[A-Za-z]{3}\s?\d{1,2}\s?[A-Za-z]{3}\s?\d{4}'    # Tue10Feb2026
     ]
@@ -258,9 +256,9 @@ def normalize_date(date_str):
             if '/' in date:
                 if len(date.split('/')[2]) == 6:
                     date = date[:-2]
-                    parsed_date.append(parser.parse(date))
+                    parsed_date.append(parser.parse(date.replace('，', ',')))
 
-            parsed_date.append(parser.parse(date))
+            parsed_date.append(parser.parse(date.replace('，', ',')))
 
         parsed = max(parsed_date)
         return parsed.strftime("%Y-%m-%d")
@@ -285,8 +283,7 @@ if __name__ == "__main__":
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
         use_textline_orientation=False,
-        text_det_limit_side_len=960,
-        lang='en'
+        text_det_limit_side_len=960
     )
 
     dir_path = Path("receipts_v2")
