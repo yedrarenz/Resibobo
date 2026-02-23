@@ -7,3 +7,4 @@ pytesseract
 numpy
 paddlepaddle
 pillow-heif
+openpyxl

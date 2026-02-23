@@ -1,5 +1,7 @@
 import ast
 import csv
+from openpyxl import Workbook
+
 
 import logging
 logger = logging.getLogger("CSV")
@@ -29,4 +31,25 @@ def convert_to_csv(input_file, output_file):
             filtered_row = {k: v for k, v in row.items() if k in fieldnames}
             writer.writerow(filtered_row)
 
+    convert_to_xlsx(rows, "output/final_report.xlsx")
+
     logger.info(f"Converted to csv successfully! {output_file}")
+
+
+
+def convert_to_xlsx(rows, output_file):
+    wb = Workbook()
+    ws = wb.active
+
+    headers = [
+        'TIN', 'Total', 'Date Issued',
+        'Company & Address', 'Link',
+        'Image Path'
+    ]
+
+    ws.append(headers)
+
+    for row in rows:
+        ws.append([row.get(h, "") for h in headers])
+
+    wb.save(output_file)
