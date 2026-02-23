@@ -294,6 +294,7 @@ if __name__ == "__main__":
         if file_path.is_file():
             info = extract_biz_info(file_path)
             info['Link'] = f"https://todo-sharepoint.com/{file_path.name}"
+            info['Image Path'] = f"=HYPERLINK('{dir_path}/{file_path.name}', 'Validate Receipt')"
             final_report += f"{info}\n"
 
     with open("final_report/report.txt", "w", encoding="utf-8", errors="ignore") as file:

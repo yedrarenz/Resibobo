@@ -49,3 +49,4 @@
 - Data sanitization
 - Exporting to excel
 - Autocorrection of spelling
+- Add confidence level for each extraction (For accuracy)

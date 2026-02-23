@@ -18,7 +18,7 @@ def convert_to_csv(input_file, output_file):
                 rows.append(data)
 
     # Write to CSV
-    fieldnames = ['TIN', 'Total', 'Date Issued', 'Company & Address', 'Link']
+    fieldnames = ['TIN', 'Total', 'Date Issued', 'Company & Address', 'Link', 'Image Path']
 
     with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, extrasaction="ignore")
