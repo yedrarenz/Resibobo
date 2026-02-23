@@ -1,7 +1,8 @@
 import ast
 import csv
 from openpyxl import Workbook
-
+from pathlib import Path
+import os
 
 import logging
 logger = logging.getLogger("CSV")
@@ -51,5 +52,24 @@ def convert_to_xlsx(rows, output_file):
 
     for row in rows:
         ws.append([row.get(h, "") for h in headers])
+
+        current_row = ws.max_row
+
+        # Find the column index of "Image Path"
+        img_col = headers.index("Image Path") + 1  # +1 because openpyxl is 1-based
+
+        image_path_str = row.get("Image Path", "")
+        if image_path_str:
+            image_path = Path(image_path_str).resolve()
+
+            # Relative path from Excel file
+            relative_path = os.path.relpath(image_path, 'output/final_report.xlsx')
+            safe_path = Path(relative_path).as_posix()
+
+            # Update the cell to be a clickable hyperlink
+            img_cell = ws.cell(row=current_row, column=img_col)
+            img_cell.value = safe_path
+            img_cell.hyperlink = safe_path
+            img_cell.style = "Hyperlink"
 
     wb.save(output_file)
