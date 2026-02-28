@@ -286,7 +286,7 @@ if __name__ == "__main__":
         text_det_limit_side_len=960
     )
 
-    dir_path = Path("receipts_v2")
+    dir_path = Path("receipts")
 
     final_report = ""
 

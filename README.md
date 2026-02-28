@@ -71,7 +71,7 @@ This project uses:
 
 #  How to Run
 
-1. Add your cropped receipt images to the `/receipts_v2` directory.
+1. Add your cropped receipt images to the `/receipts` directory.
 
 2. Install dependencies:
 

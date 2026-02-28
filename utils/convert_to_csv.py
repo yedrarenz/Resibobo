@@ -116,7 +116,7 @@ def convert_to_xlsx(rows, output_file):
 
         if image_path_str:
             filename = Path(image_path_str).name
-            correct_path = f"../receipts_v2/{filename}"
+            correct_path = f"../receipts/{filename}"
 
             cell = ws.cell(row=current_row, column=img_col)
             cell.value = "Open Receipt"
