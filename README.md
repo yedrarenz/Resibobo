@@ -1,6 +1,6 @@
 #  Resibobo
 
-Resibobo is an OCR-powered receipt parser designed to extract structured financial data from Philippine receipts and export them into CSV format for automation and bookkeeping.
+Resibobo is an OCR-powered receipt parser designed to extract structured data from receipts and export them into CSV and Excel format for tax compliance.
 
 ---
 
@@ -47,11 +47,11 @@ This project uses:
 - PaddleOCR  
   https://github.com/PaddlePaddle/PaddleOCR?tab=readme-ov-file
 
-- PP-OCRv5 Server Recognition Model & Mobile
-  https://huggingface.co/PaddlePaddle/PP-OCRv5_server_rec
+- PP-OCRv5 Mobile Recognition Model
+  https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_rec
 
-- PP-OCRv5 Server Detection Model & Mobile
-  https://huggingface.co/PaddlePaddle/PP-OCRv5_server_det
+- PP-OCRv5 Mobile Detection Model & Mobile
+  https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_det
 
 ---
 
@@ -71,7 +71,7 @@ This project uses:
 
 #  How to Run
 
-1. Add your cropped receipt images to the `/receipts` directory.
+1. Add your cropped receipt images to the `/receipts_v2` directory.
 
 2. Install dependencies:
 
@@ -85,7 +85,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-4. A CSV file will be generated in the `/output` directory.
+4. A CSV and Excel file will be generated in the `/output` directory.
 
 ---
 
@@ -106,7 +106,7 @@ python main.py
 - Image inferencing uses CPU.
 - M1 / Mac machines may run slower due to memory usage.
 - GPU significantly improves performance.
-- Currently supports physical printed receipts only.
+- Currently supports printed receipts only.
   - Not yet supported:
     - Grab
     - Food Panda
@@ -117,6 +117,14 @@ python main.py
 #  Example Text Detection and Recognition
 
 ![Example Text Detection and Recognition](misc/7e428edc-0258-4efa-866f-5d0d14bd65a7_ocr_res_img.jpg)
+
+---
+
+---
+
+#  Example Excel Output
+
+![Example XLSX Output](misc/img.png)
 
 ---
 
@@ -136,7 +144,3 @@ Contributions are welcome.
 Feel free to open issues or submit pull requests to improve parsing accuracy, performance, or add new receipt formats.
 
 ---
-
-#  License
-
-This project is open-source. You may add an MIT License or other license of your choice.
